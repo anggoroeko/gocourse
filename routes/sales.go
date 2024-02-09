@@ -5,8 +5,10 @@ import (
 	"go_pos_v1_2/helper"
 	model "go_pos_v1_2/models"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator"
 	"gorm.io/gorm/clause"
 )
 
@@ -21,284 +23,277 @@ func GetSales(c *gin.Context) {
 		return
 	}
 
-	// GetSalesResponse := []model.SalesResponse{}
+	//:: FINAL RESPONSE
+	response := []model.SalesResponse{}
 
-	// for _, p := range reqSales {
-	// 	//:: GET DATA INVENTORY
-	// 	inventory, distributor, product, err := GetDataInventory(p.ID)
-	// 	if err != nil {
-	// 		stringSlice := []string{}
-	// 		message := err.Error()
+	for _, s := range reqSales {
+		//:: GET DATA DISTRIBUTOR AND DATA PRODUCT
+		distributor, product, err := GetDataDistributorProduct(s.Inventory.DistributorID, s.Inventory.ProductID)
+		if err != nil {
+			stringSlice := []string{}
+			message := err.Error()
 
-	// 		helper.JsonResponse(stringSlice, message, http.StatusInternalServerError, c)
-	// 		return
-	// 	}
+			helper.JsonResponse(stringSlice, message, http.StatusInternalServerError, c)
+			return
+		}
 
-	// 	productResp := model.SalesResponse{
-	// 		// ID:                  p.ID,
-	// 		// Name:                p.Name,
-	// 		// DistributorID:       p.DistributorID,
-	// 		// ProductID:           p.ProductID,
-	// 		// DistributorResponse: distributor,
-	// 		// ProductResponse:     product,
-	// 		// Stock:               p.Stock,
-	// 		// Price:               p.Price,
-	// 		// CreatedAt:           inventory.CreatedAt,
-	// 		// UpdatedAt:           inventory.UpdatedAt,
-	// 	}
+		salesResponse := model.SalesResponse{
+			ID:          s.ID,
+			Member:      s.Member.Name,
+			Chasier:     s.Chasier.Name,
+			Inventory:   s.Inventory.Name,
+			Distributor: distributor,
+			Product:     product,
+			Quantity:    s.Quantity,
+			Price:       uint(s.Inventory.Price),
+		}
 
-	// 	GetSalesResponse = append(GetSalesResponse, productResp)
-	// }
+		response = append(response, salesResponse)
+	}
 
-	// c.JSON(http.StatusOK, gin.H{
-	// 	"message": "Successfully",
-	// 	"data":    GetSalesResponse,
-	// })
+	c.JSON(http.StatusOK, gin.H{
+		"data":    response,
+		"message": "Successfully get data sales",
+		"status":  http.StatusOK,
+	})
 }
 
-// func InsertInventory(c *gin.Context) {
-// 	validate := validator.New()
-// 	reqSalesParam := model.Sales{}
+func InsertSales(c *gin.Context) {
+	validate := validator.New()
+	reqSalesParam := model.Sales{}
 
-// 	if err := c.BindJSON(&reqSalesParam); err != nil {
-// 		stringSlice := []string{}
-// 		message := err.Error()
-// 		helper.JsonResponse(stringSlice, message, http.StatusBadRequest, c)
-// 		return
-// 	}
+	if err := c.BindJSON(&reqSalesParam); err != nil {
+		stringSlice := []string{}
+		message := err.Error()
+		helper.JsonResponse(stringSlice, message, http.StatusBadRequest, c)
+		return
+	}
 
-// 	//:: CHECK REQUIRED/VALIDATED USER
-// 	if errs := validate.Struct(&reqSalesParam); errs != nil {
-// 		// validateResp := []model.ErrValidationResp{}
-// 		// for _, err := range errs.(validator.ValidationErrors) {
-// 		// Access the field name causing the validation error
-// 		// fieldName := err.Field()
-// 		// valDateResp := model.ErrValidationResp{
-// 		// 	Name: fieldName,
-// 		// }
-// 		// validateResp = append(validateResp, valDateResp)
-// 		// }
-// 		// stringSlice := errs.(validator.ValidationErrors)
-// 		// helper.JsonResponseMap(stringSlice, message, http.StatusInternalServerError, c)
-// 		stringSlice := []string{}
-// 		message := errs.Error()
-// 		helper.JsonResponse(stringSlice, message, http.StatusBadRequest, c)
-// 		return
-// 	}
+	//:: CHECK REQUIRED/VALIDATED USER
+	if errs := validate.Struct(&reqSalesParam); errs != nil {
+		// validateResp := []model.ErrValidationResp{}
+		// for _, err := range errs.(validator.ValidationErrors) {
+		// Access the field name causing the validation error
+		// fieldName := err.Field()
+		// valDateResp := model.ErrValidationResp{
+		// 	Name: fieldName,
+		// }
+		// validateResp = append(validateResp, valDateResp)
+		// }
+		// stringSlice := errs.(validator.ValidationErrors)
+		// helper.JsonResponseMap(stringSlice, message, http.StatusInternalServerError, c)
+		stringSlice := []string{}
+		message := errs.Error()
+		helper.JsonResponse(stringSlice, message, http.StatusBadRequest, c)
+		return
+	}
 
-// 	reqData := model.Sales{
-// 		Name:          reqSalesParam.Name,
-// 		DistributorID: reqSalesParam.DistributorID,
-// 		ProductID:     reqSalesParam.ProductID,
-// 		Stock:         reqSalesParam.Stock,
-// 		Price:         reqSalesParam.Price,
-// 	}
+	//:: IDENTIFICATION DATA SALES
+	reqData := model.Sales{
+		InventoryID: reqSalesParam.InventoryID,
+		MemberID:    reqSalesParam.MemberID,
+		Quantity:    reqSalesParam.Quantity,
+		ChasierID:   reqSalesParam.ChasierID,
+	}
 
-// 	data := config.DB.Create(&reqData)
+	//:: INSERT DATA SALES
+	data := config.DB.Create(&reqData)
 
-// 	if data.Error != nil {
-// 		stringSlice := []string{}
-// 		message := data.Error.Error()
-// 		helper.JsonResponse(stringSlice, message, http.StatusInternalServerError, c)
-// 		return
-// 	}
+	if data.Error != nil {
+		stringSlice := []string{}
+		message := data.Error.Error()
+		helper.JsonResponse(stringSlice, message, http.StatusInternalServerError, c)
+		return
+	}
 
-// 	//:: PUT ALL RESPONSE TO HELPER : ON DEVELOPMENT
-// 	stringSlice := []string{"name", reqSalesParam.Name}
-// 	message := "Successfully Insert Inventory"
+	//:: UPDATE DATA STOCK INVENTORY
+	stockCount, err := UpdDataStockInventory(reqSalesParam.InventoryID, reqSalesParam.Quantity, true)
+	if err != nil {
+		stringSlice := []string{}
+		message := err.Error()
+		helper.JsonResponse(stringSlice, message, http.StatusInternalServerError, c)
+		return
+	}
 
-// 	helper.JsonResponse(stringSlice, message, http.StatusOK, c)
-// }
+	//:: PUT ALL RESPONSE TO HELPER : ON DEVELOPMENT
+	stringSlice := []string{"stock_now", strconv.FormatInt(int64(stockCount), 10)}
+	message := "Successfully Insert Sales and Update Stock in Inventory"
 
-// func GetSalesById(c *gin.Context) {
-// 	reqSales := model.Sales{}
+	helper.JsonResponse(stringSlice, message, http.StatusOK, c)
+}
 
-// 	id := c.Param("id")
+func GetSalesById(c *gin.Context) {
+	reqSales := model.Sales{}
 
-// 	if data := config.DB.Preload(clause.Associations).First(&reqSales, "id = ?", id); data.Error != nil {
-// 		stringSlice := []string{}
-// 		message := data.Error.Error()
+	id := c.Param("id")
 
-// 		helper.JsonResponse(stringSlice, message, http.StatusInternalServerError, c)
-// 		return
-// 	}
+	if data := config.DB.Preload(clause.Associations).First(&reqSales, "id = ?", id); data.Error != nil {
+		stringSlice := []string{}
+		message := data.Error.Error()
 
-// 	//:: CHANGE STRING TO UINT64
-// 	uint64, err := strconv.ParseUint(id, 10, 0)
-// 	if err != nil {
-// 		stringSlice := []string{}
-// 		message := err.Error()
+		helper.JsonResponse(stringSlice, message, http.StatusInternalServerError, c)
+		return
+	}
 
-// 		helper.JsonResponse(stringSlice, message, http.StatusInternalServerError, c)
-// 		return
-// 	}
+	//:: GET DATA DISTRIBUTOR AND DATA PRODUCT
+	distributor, product, err := GetDataDistributorProduct(reqSales.Inventory.DistributorID, reqSales.Inventory.ProductID)
+	if err != nil {
+		stringSlice := []string{}
+		message := err.Error()
 
-// 	//:: IDENTIFICATION UINT64 AS UINT
-// 	idN := uint(uint64)
+		helper.JsonResponse(stringSlice, message, http.StatusInternalServerError, c)
+		return
+	}
 
-// 	//:: GET DATA INVENTORY
-// 	inventory, distributor, product, err := GetDataInventory(idN)
-// 	if err != nil {
-// 		stringSlice := []string{}
-// 		message := err.Error()
+	//:: FINAL RESPONSE
+	response := model.SalesResponse{
+		ID:          reqSales.ID,
+		Member:      reqSales.Member.Name,
+		Chasier:     reqSales.Chasier.Name,
+		Inventory:   reqSales.Inventory.Name,
+		Distributor: distributor,
+		Product:     product,
+		Quantity:    reqSales.Quantity,
+		Price:       uint(reqSales.Inventory.Price),
+	}
 
-// 		helper.JsonResponse(stringSlice, message, http.StatusInternalServerError, c)
-// 		return
-// 	}
+	c.JSON(http.StatusOK, gin.H{
+		"data":    response,
+		"message": "Successfully get data sales",
+		"status":  http.StatusOK,
+	})
+}
 
-// 	//:: FINAL RESPONSE
-// 	response := model.SalesResponse{
-// 		ID:                  inventory.ID,
-// 		Name:                reqSales.Name,
-// 		DistributorID:       reqSales.DistributorID,
-// 		ProductID:           reqSales.ProductID,
-// 		DistributorResponse: distributor,
-// 		ProductResponse:     product,
-// 		Stock:               reqSales.Stock,
-// 		Price:               reqSales.Price,
-// 		CreatedAt:           inventory.CreatedAt,
-// 		UpdatedAt:           inventory.UpdatedAt,
-// 	}
+func DeleteSales(c *gin.Context) {
+	id := c.Param("id")
 
-// 	c.JSON(http.StatusOK, gin.H{
-// 		"data":    response,
-// 		"message": "Successfully get data inventory",
-// 		"status":  http.StatusOK,
-// 	})
-// }
+	reqSales := model.Sales{}
 
-// func DeleteInventory(c *gin.Context) {
-// 	id := c.Param("id")
+	//:: DELETE MASTER INVENTORY
+	if data := config.DB.Delete(&reqSales, id); data.Error != nil {
+		stringSlice := []string{}
+		message := data.Error.Error()
 
-// 	reqSales := model.Sales{}
+		helper.JsonResponse(stringSlice, message, http.StatusInternalServerError, c)
+		return
+	}
 
-// 	//:: DELETE MASTER INVENTORY
-// 	if data := config.DB.Delete(&reqSales, id); data.Error != nil {
-// 		stringSlice := []string{}
-// 		message := data.Error.Error()
+	c.JSON(http.StatusOK, gin.H{
+		"data":    nil,
+		"message": "Successfully delete sales",
+		"status":  http.StatusOK,
+	})
+}
 
-// 		helper.JsonResponse(stringSlice, message, http.StatusInternalServerError, c)
-// 		return
-// 	}
+func UpdateSales(c *gin.Context) {
+	validate := validator.New()
+	id := c.Param("id")
 
-// 	c.JSON(http.StatusOK, gin.H{
-// 		"data":    nil,
-// 		"message": "Successfully update inventory",
-// 		"status":  http.StatusOK,
-// 	})
-// }
+	//:: IDENTIFYING MODEL INVENTORY
+	reqSales := model.Sales{}
 
-// func UpdateInventory(c *gin.Context) {
-// 	validate := validator.New()
-// 	id := c.Param("id")
+	//:: GET BODY REQUEST JSON
+	if err := c.BindJSON(&reqSales); err != nil {
+		stringSlice := []string{}
+		message := err.Error()
 
-// 	//:: IDENTIFYING MODEL INVENTORY
-// 	reqSales := model.Sales{}
+		helper.JsonResponse(stringSlice, message, http.StatusInternalServerError, c)
+		return
+	}
 
-// 	//:: GET BODY REQUEST JSON
-// 	if err := c.BindJSON(&reqSales); err != nil {
-// 		stringSlice := []string{}
-// 		message := err.Error()
+	//:: CHECK REQUIRED/VALIDATED USER
+	if errs := validate.Struct(&reqSales); errs != nil {
+		stringSlice := []string{}
+		message := errs.Error()
 
-// 		helper.JsonResponse(stringSlice, message, http.StatusInternalServerError, c)
-// 		return
-// 	}
+		helper.JsonResponse(stringSlice, message, http.StatusBadRequest, c)
+		c.Abort()
+		return
+	}
 
-// 	//:: CHECK REQUIRED/VALIDATED USER
-// 	if errs := validate.Struct(&reqSales); errs != nil {
-// 		stringSlice := []string{}
-// 		message := errs.Error()
+	//:: UPDATE SALES
+	dataUpdate := config.DB.Model(reqSales).Where("id = ?", id).Updates(reqSales)
 
-// 		helper.JsonResponse(stringSlice, message, http.StatusBadRequest, c)
-// 		c.Abort()
-// 		return
-// 	}
+	if dataUpdate.Error != nil {
+		stringSlice := []string{}
+		message := dataUpdate.Error.Error()
 
-// 	//:: UPDATE INVENTORY
-// 	dataUpdate := config.DB.Model(reqSales).Where("id = ?", id).Updates(reqSales)
+		helper.JsonResponse(stringSlice, message, http.StatusInternalServerError, c)
+		return
+	}
 
-// 	if dataUpdate.Error != nil {
-// 		stringSlice := []string{}
-// 		message := dataUpdate.Error.Error()
+	//:: GET DATA DISTRIBUTOR AND DATA PRODUCT
+	if data := config.DB.Preload(clause.Associations).First(&reqSales, "id = ?", id); data.Error != nil {
+		stringSlice := []string{}
+		message := data.Error.Error()
 
-// 		helper.JsonResponse(stringSlice, message, http.StatusInternalServerError, c)
-// 		return
-// 	}
+		helper.JsonResponse(stringSlice, message, http.StatusInternalServerError, c)
+		return
+	}
 
-// 	//:: CHANGE STRING TO UINT64
-// 	uint64, err := strconv.ParseUint(id, 10, 0)
-// 	if err != nil {
-// 		stringSlice := []string{}
-// 		message := err.Error()
+	distributor, product, err := GetDataDistributorProduct(reqSales.Inventory.DistributorID, reqSales.Inventory.ProductID)
+	if err != nil {
+		stringSlice := []string{}
+		message := err.Error()
 
-// 		helper.JsonResponse(stringSlice, message, http.StatusInternalServerError, c)
-// 		return
-// 	}
+		helper.JsonResponse(stringSlice, message, http.StatusInternalServerError, c)
+		return
+	}
 
-// 	//:: IDENTIFICATION UINT64 AS UINT
-// 	idN := uint(uint64)
+	//:: FINAL RESPONSE
+	response := model.SalesResponse{
+		ID:          reqSales.ID,
+		Member:      reqSales.Member.Name,
+		Chasier:     reqSales.Chasier.Name,
+		Inventory:   reqSales.Inventory.Name,
+		Distributor: distributor,
+		Product:     product,
+		Quantity:    reqSales.Quantity,
+	}
 
-// 	//:: GET DATA INVENTORY
-// 	inventory, distributor, product, err := GetDataInventory(idN)
+	c.JSON(http.StatusOK, gin.H{
+		"data":    response,
+		"message": "Successfully update inventory",
+		"status":  http.StatusOK,
+	})
+}
 
-// 	if err != nil {
-// 		stringSlice := []string{}
-// 		message := err.Error()
+func GetDataDistributorProduct(distributorId, productId uint) (string, string, error) {
+	reqDistributor := model.Distributor{}
+	if data := config.DB.Preload(clause.Associations).First(&reqDistributor, "id = ?", distributorId); data.Error != nil {
+		return "", "", data.Error
+	}
 
-// 		helper.JsonResponse(stringSlice, message, http.StatusInternalServerError, c)
-// 		return
-// 	}
+	//:: GET DATA PRODUCT
+	reqProduct := model.Product{}
+	if data := config.DB.Preload(clause.Associations).First(&reqProduct, "id = ?", productId); data.Error != nil {
+		return "", "", data.Error
+	}
 
-// 	//:: FINAL RESPONSE
-// 	response := model.SalesResponse{
-// 		ID:                  inventory.ID,
-// 		Name:                reqSales.Name,
-// 		DistributorID:       reqSales.DistributorID,
-// 		ProductID:           reqSales.ProductID,
-// 		DistributorResponse: distributor,
-// 		ProductResponse:     product,
-// 		Stock:               reqSales.Stock,
-// 		Price:               reqSales.Price,
-// 		CreatedAt:           inventory.CreatedAt,
-// 		UpdatedAt:           inventory.UpdatedAt,
-// 	}
+	return reqDistributor.Name, reqProduct.Name, nil
+}
 
-// 	c.JSON(http.StatusOK, gin.H{
-// 		"data":    response,
-// 		"message": "Successfully update inventory",
-// 		"status":  http.StatusOK,
-// 	})
-// }
+func UpdDataStockInventory(inventoryId, quantityNow uint, isSales bool) (uint, error) {
+	reqDataInv := model.Inventory{}
+	if dataInv := config.DB.First(&reqDataInv, "id = ?", inventoryId); dataInv.Error != nil {
+		return 0, dataInv.Error
+	}
 
-// func GetDataInventory(id uint) (model.SalesResponse, model.DistributorResponse, model.ProductResponse, error) {
-// 	reqSales := model.Sales{}
-// 	dataInventory := config.DB.Preload(clause.Associations).Where("id=?", id).First(&reqSales)
+	//:: UPDATE DATA STOCK INVENTORY
+	var stockCount uint
+	if isSales { //:: IF SALES STOCK DECREASES
+		stockCount = reqDataInv.Stock - quantityNow
+	} else { //:: IF PURCHASES STOCK INCREASES
+		stockCount = reqDataInv.Stock + quantityNow
+	}
 
-// 	//:: GET DATA DISTRIBUTOR FROM INVENTORY
-// 	if dataInventory.Error != nil {
-// 		return model.SalesResponse{}, model.DistributorResponse{}, model.ProductResponse{}, dataInventory.Error
-// 	}
+	reqUpdInv := model.Inventory{
+		Stock: stockCount,
+	}
 
-// 	inventory := model.SalesResponse{
-// 		ID:        reqSales.ID,
-// 		CreatedAt: reqSales.CreatedAt.Format("2006-01-02 15:04:05"),
-// 		UpdatedAt: reqSales.UpdatedAt.Format("2006-01-02 15:04:05"),
-// 	}
+	if updInv := config.DB.Where("id = ?", inventoryId).Updates(reqUpdInv); updInv.Error != nil {
+		return 0, updInv.Error
+	}
 
-// 	distributor := model.DistributorResponse{
-// 		ID:        reqSales.Distributor.ID,
-// 		Name:      reqSales.Distributor.Name,
-// 		CreatedAt: reqSales.Distributor.CreatedAt,
-// 		UpdatedAt: reqSales.Distributor.UpdatedAt,
-// 	}
-
-// 	//:: GET DATA PRODUCT FROM INVENTORY
-// 	product := model.ProductResponse{
-// 		ID:        reqSales.Product.ID,
-// 		Name:      reqSales.Product.Name,
-// 		CreatedAt: reqSales.Product.CreatedAt,
-// 		UpdatedAt: reqSales.Product.UpdatedAt,
-// 	}
-
-// 	return inventory, distributor, product, nil
-// }
+	return stockCount, nil
+}

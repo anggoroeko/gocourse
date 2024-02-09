@@ -5,6 +5,7 @@ import (
 	"go_pos_v1_2/helper"
 	model "go_pos_v1_2/models"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
@@ -101,8 +102,17 @@ func InsertPurchase(c *gin.Context) {
 		return
 	}
 
+	//:: UPDATE DATA STOCK INVENTORY
+	stockCount, err := UpdDataStockInventory(reqPurchaseParam.InventoryID, reqPurchaseParam.Quantity, false)
+	if err != nil {
+		stringSlice := []string{}
+		message := err.Error()
+		helper.JsonResponse(stringSlice, message, http.StatusInternalServerError, c)
+		return
+	}
+
 	//:: PUT ALL RESPONSE TO HELPER : ON DEVELOPMENT
-	stringSlice := []string{"name", reqPurchaseParam.Inventory.Name}
+	stringSlice := []string{"stock_now", strconv.FormatInt(int64(stockCount), 10)}
 	message := "Successfully Insert Purchase"
 
 	helper.JsonResponse(stringSlice, message, http.StatusOK, c)

@@ -97,6 +97,15 @@ func main() {
 			purchase.DELETE("/delete/:id", routes.DeletePurchase)
 			purchase.PUT("/update/:id", routes.UpdatePurchase)
 		}
+
+		sales := route.Group("/sales").Use(helper.ValidateJWT())
+		{
+			sales.POST("/insert", routes.InsertSales)
+			sales.GET("/", routes.GetSales)
+			sales.GET("/:id", routes.GetSalesById)
+			sales.DELETE("/delete/:id", routes.DeleteSales)
+			sales.PUT("/update/:id", routes.UpdateSales)
+		}
 	}
 
 	r.Run(":8011")
