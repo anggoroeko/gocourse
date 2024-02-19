@@ -110,7 +110,7 @@ func DeleteDistributor(c *gin.Context) {
 	}
 
 	stringSlice := []string{}
-	message := "Successfully deleted product"
+	message := "Successfully deleted distributor"
 
 	helper.JsonResponse(stringSlice, message, http.StatusOK, c)
 }

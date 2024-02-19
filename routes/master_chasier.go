@@ -132,9 +132,9 @@ func GetChasierById(c *gin.Context) {
 		ID:        reqChasier.ID,
 		Name:      reqChasier.Name,
 		UserID:    reqChasier.UserID,
+		User:      user,
 		CreatedAt: reqChasier.CreatedAt.Format("2006-01-02 15:04:05"),
 		UpdatedAt: reqChasier.UpdatedAt.Format("2006-01-02 15:04:05"),
-		User:      user,
 	}
 
 	c.JSON(http.StatusOK, gin.H{

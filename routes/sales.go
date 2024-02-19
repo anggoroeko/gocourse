@@ -249,6 +249,7 @@ func UpdateSales(c *gin.Context) {
 		Distributor: distributor,
 		Product:     product,
 		Quantity:    reqSales.Quantity,
+		Price:       uint(reqSales.Inventory.Price),
 	}
 
 	c.JSON(http.StatusOK, gin.H{

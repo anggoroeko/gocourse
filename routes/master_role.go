@@ -108,7 +108,7 @@ func DeleteRole(c *gin.Context) {
 	}
 
 	stringSlice := []string{}
-	message := "Successfullyfully deleted role"
+	message := "Successfully deleted role"
 
 	helper.JsonResponse(stringSlice, message, http.StatusOK, c)
 }

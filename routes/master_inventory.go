@@ -185,7 +185,7 @@ func DeleteInventory(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"data":    nil,
-		"message": "Successfully update inventory",
+		"message": "Successfully delete inventory",
 		"status":  http.StatusOK,
 	})
 }
