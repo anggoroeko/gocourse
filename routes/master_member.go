@@ -66,7 +66,7 @@ func InsertMember(c *gin.Context) {
 
 	//:: PUT ALL RESPONSE TO HELPER : ON DEVELOPMENT
 	stringSlice := []string{"name", reqMemberParam.Name}
-	message := "Successfully Insert User"
+	message := "Successfully Insert Member"
 
 	helper.JsonResponse(stringSlice, message, http.StatusOK, c)
 }
