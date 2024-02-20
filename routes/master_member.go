@@ -110,7 +110,7 @@ func DeleteMember(c *gin.Context) {
 	}
 
 	stringSlice := []string{}
-	message := "Successfully deleted product"
+	message := "Successfully deleted member"
 
 	helper.JsonResponse(stringSlice, message, http.StatusOK, c)
 }
@@ -191,7 +191,7 @@ func UpdateMember(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"data":    response,
-		"message": "Successfully update product",
+		"message": "Successfully update member",
 		"status":  http.StatusOK,
 	})
 }
